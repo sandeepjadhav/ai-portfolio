@@ -16,15 +16,26 @@ export default function ChatInput({ onSend }) {
         display: "flex",
         p: 2,
         borderTop: "1px solid #ddd",
-        bgcolor: "white"
+        bgcolor: "white",
       }}
     >
       <TextField
         fullWidth
+        multiline
+        maxRows={4}
         placeholder="Send a message..."
         value={text}
         onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && send()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.ctrlKey) {
+            e.preventDefault();
+            send();
+          }
+
+          if (e.key === "Escape") {
+            setText("");
+          }
+        }}
       />
       <Button onClick={send} sx={{ ml: 2 }} variant="contained">
         Send

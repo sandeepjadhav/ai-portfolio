@@ -1,37 +1,23 @@
 import { Box, Typography } from "@mui/material";
+import { useEffect, useRef } from "react";
 
 export default function ChatWindow({ messages }) {
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   return (
-    <Box
-      sx={{
-        flex: 1,
-        overflowY: "auto",
-        p: 3,
-        bgcolor: "#f7f7f8"
-      }}
-    >
+    <Box sx={{ flex: 1, overflowY: "auto", p: 3, bgcolor: "#f7f7f8" }}>
       {messages.map((m, i) => (
-        <Box
-          key={i}
-          sx={{
-            mb: 2,
-            display: "flex",
-            justifyContent: m.role === "user" ? "flex-end" : "flex-start"
-          }}
-        >
-          <Box
-            sx={{
-              maxWidth: "70%",
-              p: 2,
-              borderRadius: 2,
-              bgcolor: m.role === "user" ? "#1976d2" : "#e0e0e0",
-              color: m.role === "user" ? "white" : "black"
-            }}
-          >
-            <Typography>{m.content}</Typography>
-          </Box>
+        <Box key={i} sx={{ mb: 2 }}>
+          <Typography>
+            <b>{m.role === "user" ? "You" : "AI"}:</b> {m.content}
+          </Typography>
         </Box>
       ))}
+      <div ref={bottomRef} />
     </Box>
   );
 }

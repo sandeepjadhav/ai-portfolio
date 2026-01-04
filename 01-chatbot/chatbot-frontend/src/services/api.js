@@ -64,3 +64,17 @@ export async function streamMessage(message, onChunk) {
     }
   }
 }
+
+export async function renameChat(chatId, title) {
+  await fetch(`http://localhost:3000/api/chat/chats/${chatId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title })
+  });
+}
+
+export async function deleteChat(chatId) {
+  await fetch(`http://localhost:3000/api/chat/chats/${chatId}`, {
+    method: "DELETE"
+  });
+}

@@ -171,4 +171,28 @@ router.get("/chats/:chatId/messages", (req, res) => {
   res.json(messages);
 });
 
+// Rename a chat
+router.put("/chats/:chatId", (req, res) => {
+  const { title } = req.body;
+
+  if (!title) {
+    return res.status(400).json({ error: "title required" });
+  }
+
+  db.prepare(
+    "UPDATE chats SET title = ? WHERE id = ?"
+  ).run(title, req.params.chatId);
+
+  res.json({ success: true });
+});
+
+router.delete("/chats/:chatId", (req, res) => {
+  const { chatId } = req.params;
+
+  db.prepare("DELETE FROM messages WHERE chat_id = ?").run(chatId);
+  db.prepare("DELETE FROM chats WHERE id = ?").run(chatId);
+
+  res.json({ success: true });
+});
+
 export default router;

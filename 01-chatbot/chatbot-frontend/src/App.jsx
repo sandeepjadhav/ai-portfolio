@@ -6,7 +6,9 @@ import ChatInput from "./components/ChatInput";
 import {
   sendMessage,
   fetchChats,
-  fetchMessages
+  fetchMessages,
+  renameChat,
+  deleteChat
 } from "./services/api";
 
 export default function App() {
@@ -86,13 +88,33 @@ export default function App() {
     );
   };
 
+  const handleRename = async (chatId, title) => {
+  await renameChat(chatId, title);
+
+  setChats((prev) =>
+    prev.map((c) =>
+      c.id === chatId ? { ...c, title } : c
+    )
+  );
+};
+const handleDelete = async (chatId) => {
+  await deleteChat(chatId);
+
+  setChats((prev) => prev.filter((c) => c.id !== chatId));
+
+  if (chatId === activeChatId) {
+    setActiveChatId(null);
+  }
+};
   return (
     <Box sx={{ display: "flex" }}>
       <Sidebar
         chats={chats}
-        activeChatId={activeChatId}
-        onSelect={selectChat}  
-        onNew={newChat}
+  activeChatId={activeChatId}
+  onSelect={selectChat}
+  onNew={newChat}
+  onRename={handleRename}
+  onDelete={handleDelete}
       />
 
       <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
