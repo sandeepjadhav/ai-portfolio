@@ -78,3 +78,12 @@ export async function deleteChat(chatId) {
     method: "DELETE"
   });
 }
+export async function uploadDocument(file) {
+  const form = new FormData();
+  form.append("file", file);
+
+  await fetch("http://localhost:3000/api/documents/upload", {
+    method: "POST",
+    body: form
+  });
+}

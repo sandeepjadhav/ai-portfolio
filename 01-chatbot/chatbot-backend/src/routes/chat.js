@@ -2,6 +2,7 @@ import express from "express";
 // import { chatWithLLM, chatWithMemory, streamWithLLM } from "../services/ollama.js";
 import { chatWithMemory, streamWithLLM } from "../services/ollama.js";
 import db from "../db/database.js";
+import { searchDocs } from "../rag/search.js";
 
 const router = express.Router();
 
@@ -49,7 +50,6 @@ router.post("/stream", async (req, res) => {
   }
 });
 
-
 /**
  * In-memory conversation store
  * Keyed by sessionId
@@ -91,8 +91,6 @@ router.post("/stream", async (req, res) => {
 //   }
 // });
 
-
-
 /**
  * Send message to AI
  */
@@ -104,14 +102,13 @@ router.post("/", async (req, res) => {
   }
 
   // Create chat if not exists
-  const chat = db
-    .prepare("SELECT * FROM chats WHERE id = ?")
-    .get(chatId);
+  const chat = db.prepare("SELECT * FROM chats WHERE id = ?").get(chatId);
 
   if (!chat) {
-    db.prepare(
-      "INSERT INTO chats (id, title) VALUES (?, ?)"
-    ).run(chatId, message.slice(0, 30));
+    db.prepare("INSERT INTO chats (id, title) VALUES (?, ?)").run(
+      chatId,
+      message.slice(0, 30)
+    );
   }
 
   // Save user message
@@ -121,18 +118,34 @@ router.post("/", async (req, res) => {
 
   // Load full conversation
   const history = db
-    .prepare(
-      "SELECT role, content FROM messages WHERE chat_id = ? ORDER BY id"
-    )
+    .prepare("SELECT role, content FROM messages WHERE chat_id = ? ORDER BY id")
     .all(chatId);
 
   // Add system prompt
   const messages = [
     { role: "system", content: "You are a helpful AI assistant." },
-    ...history
+    ...history,
   ];
 
   try {
+    // 🔍 Retrieve relevant documents
+    const docs = await searchDocs(message);
+
+    // 🧠 Build augmented prompt
+    const augmentedMessages = [
+      {
+        role: "system",
+        content: `
+You are a helpful assistant.
+Use the following documents to answer if relevant.
+If not relevant, answer normally.
+
+DOCUMENTS:
+${docs.join("\n\n")}
+`,
+      },
+      ...history,
+    ];
     const reply = await chatWithMemory(messages);
 
     // Save AI reply
@@ -163,9 +176,7 @@ router.get("/chats", (req, res) => {
  */
 router.get("/chats/:chatId/messages", (req, res) => {
   const messages = db
-    .prepare(
-      "SELECT role, content FROM messages WHERE chat_id = ? ORDER BY id"
-    )
+    .prepare("SELECT role, content FROM messages WHERE chat_id = ? ORDER BY id")
     .all(req.params.chatId);
 
   res.json(messages);
@@ -179,9 +190,10 @@ router.put("/chats/:chatId", (req, res) => {
     return res.status(400).json({ error: "title required" });
   }
 
-  db.prepare(
-    "UPDATE chats SET title = ? WHERE id = ?"
-  ).run(title, req.params.chatId);
+  db.prepare("UPDATE chats SET title = ? WHERE id = ?").run(
+    title,
+    req.params.chatId
+  );
 
   res.json({ success: true });
 });
