@@ -1,35 +1,55 @@
 import express from "express";
 import db from "../db/database.js";
+import { categorizeExpense } from "../services/aiCategorizer.js";
 
 const router = express.Router();
 
 /**
  * Add a new expense
  */
-router.post("/", (req, res) => {
+ router.post("/", async (req, res) => {
   const { amount, category, description, date } = req.body;
 
   if (!amount || !date) {
-    return res.status(400).json({
-      error: "amount and date are required"
-    });
+    return res.status(400).json({ error: "amount and date required" });
   }
 
-  const result = db
-    .prepare(
-      `
-      INSERT INTO expenses (amount, category, description, date)
-      VALUES (?, ?, ?, ?)
-      `
-    )
-    .run(amount, category || null, description || null, date);
+  let finalCategory = category;
+  let aiCategory = null;
+  let aiConfidence = null;
+  let categorySource = "manual";
+
+  // 🤖 AI categorization if category not provided
+  if (!category && description) {
+    const aiResult = await categorizeExpense(description);
+
+    finalCategory = aiResult.category;
+    aiCategory = aiResult.category;
+    aiConfidence = aiResult.confidence;
+    categorySource = "ai";
+  }
+
+  const result = db.prepare(`
+    INSERT INTO expenses 
+    (amount, category, description, date, ai_category, ai_confidence, category_source)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    amount,
+    finalCategory,
+    description,
+    date,
+    aiCategory,
+    aiConfidence,
+    categorySource
+  );
 
   res.json({
     id: result.lastInsertRowid,
     amount,
-    category,
-    description,
-    date
+    category: finalCategory,
+    aiCategory,
+    aiConfidence,
+    categorySource
   });
 });
 

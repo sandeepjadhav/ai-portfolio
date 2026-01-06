@@ -15,3 +15,11 @@ export const getExpenses = async () => {
 export const deleteExpense = async (id) => {
   await axios.delete(`${API_BASE}/expenses/${id}`);
 };
+
+
+export const getMonthlyInsights = async (month) => {
+  const res = await axios.get(
+    `http://localhost:4000/api/insights/monthly?month=${month}`
+  );
+  return res.data;
+};

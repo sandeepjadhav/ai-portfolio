@@ -18,4 +18,19 @@ db.exec(`
   );
 `);
 
+try {
+  db.exec(`ALTER TABLE expenses ADD COLUMN ai_category TEXT`);
+  db.exec(`ALTER TABLE expenses ADD COLUMN ai_confidence REAL`);
+  db.exec(`ALTER TABLE expenses ADD COLUMN category_source TEXT`);
+} catch (e) {}
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS budgets (
+    category TEXT,
+    month TEXT,
+    limit_amount REAL
+  );
+`);
+
+
 export default db;
